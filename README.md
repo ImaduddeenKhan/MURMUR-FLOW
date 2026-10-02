@@ -78,4 +78,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). `npm test` is the check that must pass.
 
 ## License
 
-[MIT](LICENSE) © 2026 Imaduddeen Khan
+[MIT](LICENSE) © 2026 Imad Khan

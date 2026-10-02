@@ -23,7 +23,7 @@
     "speech-to-text",
     "zero-edit"
   ],
-  "author": "Imaduddeen Khan",
+  "author": "Imad Khan",
   "license": "MIT",
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
