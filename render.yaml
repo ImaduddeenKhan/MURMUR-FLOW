@@ -1,11 +1,17 @@
 services:
   - type: web
     name: whisperflow
-    env: node
-    plan: free
+    runtime: node
+    # Disks need a paid instance. 0.5c-512mb is the smallest paid plan.
+    plan: 0.5c-512mb
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
+    autoDeployTrigger: 'off'
+    disk:
+      name: whisperflow-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production

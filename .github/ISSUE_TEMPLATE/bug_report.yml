@@ -16,11 +16,14 @@ body:
       label: Where
       options:
         - On my computer
-        - Docker
+        - Home server (Tailscale or Cloudflare Tunnel)
+        - Linux VPS with scripts/install-vps.sh
+        - Docker or Coolify
         - Hostinger
         - AWS
         - Azure
         - Google Cloud
+        - Oracle Cloud
         - Render, Railway, or Fly
         - Desktop companion
     validations:

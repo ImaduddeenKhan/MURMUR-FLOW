@@ -2,4 +2,7 @@ blank_issues_enabled: false
 contact_links:
   - name: Setup guide
     url: https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/setup.md
-    about: Install on a computer, or host on Hostinger, AWS, Azure, or Google Cloud.
+    about: Install on your own Windows, macOS, or Linux computer.
+  - name: Hosting guides
+    url: https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/deploy/README.md
+    about: Host on a VPS, Hostinger, AWS, Azure, Google Cloud, Oracle, Render, Railway, Fly, Docker, Coolify, or a home server.
