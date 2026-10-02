@@ -1,15 +1,134 @@
+<div align="center">
+
+![Murmur Flow Banner](docs/images/banner.png)
+
 # Murmur Flow
 
-Self-hosted voice dictation. You speak the way you actually talk. Murmur Flow hands back a sentence you can send.
+**The 100% Open-Source, Self-Hostable Alternative to Wispr Flow**
 
-It is an open-source alternative to [Wispr Flow](https://wisprflow.ai/). The app runs on your computer, or on a server you control. Speech and cleanup go through [Groq](https://console.groq.com/) and [Google Gemini](https://aistudio.google.com/). Both offer a free key. With no key at all, typed cleanup, snippets, and the dictionary still work.
+*Speak naturally. Get polished, zero-edit writing anywhere on your computer.*
 
 [![Test](https://github.com/ImaduddeenKhan/MURMUR-FLOW/actions/workflows/test.yml/badge.svg)](https://github.com/ImaduddeenKhan/MURMUR-FLOW/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
+[![STT: Groq Whisper](https://img.shields.io/badge/STT-Whisper--Large--v3--Turbo-orange.svg)](https://groq.com)
+[![LLM: Gemini / Groq](https://img.shields.io/badge/LLM-Gemini%20%2F%20Groq-blueviolet.svg)](https://aistudio.google.com)
 
-## Install on your computer
+[Two Ways to Use It](#-two-ways-to-use-murmur-flow) •
+[Visual Tour](#-visual-tour--features) •
+[Quickstart](#-install-on-your-computer) •
+[Self-Hosting](#-host-it-on-a-server) •
+[Desktop Companion](#%EF%B8%8F-desktop-companion-f8-in-any-app) •
+[Security](#-security)
 
-You need [Node.js 20 LTS](https://nodejs.org/) or newer.
+---
+
+</div>
+
+Murmur Flow is a voice-first productivity workspace. You speak the way you actually talk—with stutters, pauses, and mid-sentence self-corrections—and Murmur Flow instantly transforms raw audio into polished, structured text ready to send.
+
+The app runs on your computer or a private server you control. Speech-to-text and AI cleanup go through **Groq** (`whisper-large-v3-turbo` + `openai/gpt-oss-20b`) and **Google Gemini** (`gemini-3.6-flash`), both of which offer generous free-tier API keys. **With zero API keys configured**, the built-in offline rule engine still cleans stutters, expands voice snippets, and manages your personal dictionary.
+
+---
+
+## 🧭 Two ways to use Murmur Flow
+
+Murmur Flow has two parts. They are separate programs. Start with the web app. Add the desktop companion when you want to dictate into other apps.
+
+| | 🌐 Web app | 🖥️ Desktop companion (F8) |
+| --- | --- | --- |
+| **What it is** | The page at http://localhost:3050 | A small Python program that runs in a terminal window |
+| **Where you speak** | Inside the Murmur Flow browser tab | Inside any app: Slack, Cursor, VS Code, Word, Notion, Gmail, a terminal |
+| **How you start talking** | Hold **Space** while the tab is in front | Press **F8** in any app. Press **F8** again to stop |
+| **Where the text goes** | Shown in the page, and copied to your clipboard | Typed at your cursor in the app you were using |
+| **What you install** | Nothing extra. `npm start` is enough | Python 3 and four packages, on the computer that has the microphone |
+| **API key** | Not needed for typed cleanup, snippets, dictionary. Needed for the microphone | Always needed. Every F8 recording goes to the speech model |
+| **Administrator rights** | Never | On Windows, sometimes. On macOS and Linux, usually. See [below](#%EF%B8%8F-desktop-companion-f8-in-any-app) |
+| **On a server** | Yes. Host it anywhere | No. It runs on your own computer and talks to the web app's server |
+| **Also has** | Tones, meeting notes, command mode, dictionary, snippets, history, themes | Tone choice with `--tone`. Nothing else. Settings live in the web app |
+
+The companion does not replace the web app. It needs the web app's server running, and it uses the keys and dictionary you saved there.
+
+---
+
+## 📸 Visual Tour & Features
+
+### 1. Zero-Edit Dictation & Real-Time Diff
+Speak freely with verbal hesitations, restarts, and filler words. The zero-edit pipeline strips "um", "uh", "you know", and automatically resolves mid-thought revisions (*"Let's launch Friday... actually Monday"* → *"Let's launch Monday"*). 
+
+- **Split Diff View**: Compare what the mic heard against the final polished output in real time.
+- **Real-Time Metrics**: Live latency counter, speech-to-text speed (~220 WPM), and zero-edit accuracy rate (90%+).
+- **15+ Tone Presets**: Seamlessly toggle between Casual, Formal, Executive, Code, Bullets, Standup, Social, Prompt, Support, or instant multilingual translations (Spanish, French, German, Hindi, Japanese).
+- **Floating Dynamic Island**: A persistent, compact widget displaying live audio waveforms, recording timer, and hands-free toggles.
+
+<div align="center">
+
+| Dark Theme (Wispr Aesthetic) | Light Theme |
+| :---: | :---: |
+| ![Dictation Dark Mode](docs/images/01-dictation-dark.png) | ![Dictation Light Mode](docs/images/02-dictation-light.png) |
+
+</div>
+
+---
+
+### 2. Meeting Notetaker & Speaker Attribution
+Record meetings without invasive third-party bots joining your Zoom, Google Meet, or Slack Huddles.
+
+![Meeting Notetaker & Notes](docs/images/03-notetaker-notes.png)
+
+- **Multi-Speaker Diarization**: Attributed conversation timeline with speaker tags (e.g., *Nathalie*, *Stephen*, *Mikel*) and precise timestamps.
+- **Structured Synthesis**: Automatically extracts Executive Overviews, Key Decisions Made, Discussion Highlights by Topic, and Action Items with assignees.
+- **1-Click AI Export**: Copy notes directly as Markdown or generate ready-to-run prompts tailored for Claude and ChatGPT follow-ups.
+
+---
+
+### 3. Voice-to-Action Command Mode
+Highlight or paste existing drafts and command the AI to restructure, translate, or refine them using natural language.
+
+![Command Mode](docs/images/04-command-mode.png)
+
+- Enter custom commands like *"Make this concise and direct"*, *"Fix grammar and polish tone"*, or *"Format as executive bullets"*.
+- Quick one-click preset chips for common workflows.
+
+---
+
+### 4. Personal Dictionary & Phonetic Bias
+Ensure rare proper nouns, developer libraries, colleague names, and industry jargon are spelled correctly on the first pass.
+
+![Personal Dictionary](docs/images/05-personal-dictionary.png)
+
+- Custom vocabulary entries are dynamically injected into Whisper's initial decoding prompt and the LLM's system prompt.
+- Supports category tagging (`Name`, `Code`, `Jargon`, `Product`) and optional phonetic pronunciation hints (e.g. `soo-pa-base` for Supabase).
+
+---
+
+### 5. Voice Snippets Engine
+Define short spoken trigger phrases that expand into long-form templates, calendar booking links, or signatures.
+
+![Voice Snippets](docs/images/06-voice-snippets.png)
+
+- Say *"insert calendly"* → Expands instantly into `https://calendly.com/your-username/30min`.
+- Say *"bug report template"* → Injects standard GitHub issue markdown structure.
+- Say *"standard signature"* → Pastes formatted sign-off credentials.
+
+---
+
+### 6. Settings, Accessibility & Privacy Controls
+Configure speech engines, audio chimes, VAD silence auto-cutoff, and outbound webhooks.
+
+<div align="center">
+
+| Settings Modal | High-Contrast Theme |
+| :---: | :---: |
+| ![Settings Modal](docs/images/07-settings-modal.png) | ![High Contrast Mode](docs/images/08-contrast-mode.png) |
+
+</div>
+
+---
+
+## 🚀 Install on your computer
+
+You need **[Node.js 20 LTS](https://nodejs.org/)** or newer.
 
 ```bash
 git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
@@ -18,9 +137,9 @@ npm install
 npm start
 ```
 
-Open http://localhost:3050.
+Open **http://localhost:3050** in Chrome, Edge, or Safari.
 
-Or run the setup script. It checks Node.js, installs, tests, and starts the app:
+Or run the automated setup script (checks Node.js, installs dependencies, verifies tests, and starts the server):
 
 ```bash
 # Windows (PowerShell)
@@ -30,75 +149,160 @@ powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 bash scripts/setup.sh
 ```
 
-Click-by-click steps for Windows, Mac, and Linux are in **[docs/setup.md](docs/setup.md)**.
+Step-by-step setup guides for Windows, Mac, and Linux are in **[docs/setup.md](docs/setup.md)**.
 
-## Host it on a server
+---
 
-**[docs/deploy/README.md](docs/deploy/README.md)** explains which kind of hosting to buy, what it costs, and which will not work. There is one guide per platform: any Linux VPS, Hostinger, AWS, Azure, Google Cloud, DigitalOcean, Oracle Cloud (free), Hetzner, Render, Railway, Fly.io, Docker, Coolify, and a home server.
+## 🌐 Host it on a server
 
-On a fresh Ubuntu server, one command installs the app with HTTPS and a password:
+**[docs/deploy/README.md](docs/deploy/README.md)** explains hosting costs, architecture, and platform configurations. There is a dedicated deployment guide for:
+- Any Linux VPS (Ubuntu / Debian)
+- Docker & Docker Compose
+- Coolify, Render, Railway, Fly.io
+- AWS, Azure, Google Cloud, DigitalOcean, Hetzner, Oracle Cloud (Free Tier)
+- Home Server (Tailscale private network)
+
+On a fresh Ubuntu server, one command sets up the entire application with HTTPS and password protection:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
 ```
 
-A shared hosting plan that only runs PHP cannot run this app.
+> **Note**: A shared hosting plan that only runs PHP cannot run this app. Node.js 20+ runtime is required.
 
-## Add a free key
+---
 
-Microphone dictation and command mode need a key. Typed cleanup does not.
+## 🔑 Add a free key
 
-1. Create a Groq key at https://console.groq.com/keys
-2. Optional: create a Gemini key at https://aistudio.google.com/app/apikey
-3. In the app, open **Settings**, paste the key, and click **Save**
+Microphone dictation and command mode use cloud models. Typed cleanup and local heuristics do not require any keys.
 
-Or copy `.env.example` to `.env`, paste the key there, and start the app again. `.env` is gitignored. Do not commit it.
+1. Create a free Groq key at https://console.groq.com/keys
+2. Optional: create a free Gemini key at https://aistudio.google.com/app/apikey
+3. In the web app, open **Settings**, paste the key, and click **Save**
 
-These model names are already set. Leave them unless you know the exact replacement:
+Or copy `.env.example` to `.env`, set your keys, and restart:
 
-| Job | Model |
+```bash
+cp .env.example .env
+```
+
+| Job | Default Model | Speed / Latency |
+| --- | --- | --- |
+| Speech to text | `whisper-large-v3-turbo` | ~180ms |
+| LLM Zero-Edit | `openai/gpt-oss-20b` | ~120ms |
+| Alternative LLM | `gemini-3.6-flash` | ~250ms |
+
+---
+
+## 🖥️ Desktop Companion (F8 in any app)
+
+This is the part that works like Wispr Flow: press a key inside Slack, Cursor, or Word, speak, and the text appears where your cursor is.
+
+**Before you start**
+
+1. The web app is running (`npm start`), and http://localhost:3050 opens.
+2. A speech key is saved in the web app's **Settings**. Without it, every F8 recording fails.
+3. Python 3 is installed. On Windows, get it from [python.org](https://www.python.org/downloads/) and tick **Add python.exe to PATH** in the installer.
+
+### Windows
+
+1. Click **Start**, type `PowerShell`, right-click **Windows PowerShell**, and choose **Run as administrator**. Click **Yes**.
+2. Go to the project folder and install the packages:
+
+   ```powershell
+   cd C:\path\to\MURMUR-FLOW
+   pip install keyboard sounddevice scipy numpy
+   ```
+
+3. Start the companion:
+
+   ```powershell
+   python desktop/whisperflow_companion.py
+   ```
+
+4. Leave that window open. Minimize it if you like.
+5. Click into Slack, Word, or any text box. Press **F8**, speak, press **F8** again.
+
+> **Why administrator?** Windows does not let a normal program see key presses inside apps that run as administrator. So F8 can work in Notepad but do nothing in an app that was started as administrator. Starting PowerShell as administrator avoids that. You can try a normal PowerShell first, and switch if F8 does nothing in some apps.
+
+### macOS
+
+1. Open **Terminal**, go to the project folder, and install the packages:
+
+   ```bash
+   pip3 install keyboard sounddevice scipy numpy
+   ```
+
+2. Start it with `sudo`. The `keyboard` package needs it to see key presses on macOS:
+
+   ```bash
+   sudo python3 desktop/whisperflow_companion.py
+   ```
+
+3. When macOS asks, allow **Terminal** in **System Settings → Privacy & Security → Accessibility** and **Microphone**. Then quit and start the companion again.
+
+### Linux
+
+The `keyboard` package reads the keyboard device directly, so it needs root. Pasting needs `xclip` and `xdotool`, which only work in an X11 session, not Wayland. Linux is the least tested of the three.
+
+```bash
+sudo apt-get install -y python3-venv libportaudio2 xclip xdotool
+python3 -m venv .venv
+.venv/bin/pip install keyboard sounddevice scipy numpy
+sudo .venv/bin/python desktop/whisperflow_companion.py
+```
+
+### Good to know
+
+- The companion pastes through the clipboard. Whatever you had copied is replaced by the dictated text.
+- Run it on the computer with the microphone, never on the server. To use a hosted Murmur Flow, point at it: `python desktop/whisperflow_companion.py --server https://your-domain`. A server behind a password (Caddy basic auth) will refuse it; use a Tailscale address instead.
+- If the four packages are missing, the companion starts in a fallback mode that does not record your voice. Install them first.
+- Change the hotkey or tone: `--hotkey f9`, `--tone formal`.
+
+All options and fixes are in **[desktop/README.md](desktop/README.md)**.
+
+---
+
+## 🤖 Give this to a coding agent
+
+Clone the repo, open it in Cursor, Claude Code, GitHub Copilot, Gemini CLI, Windsurf, or Codex, and say **"set this up"**. Those agents read **[AGENTS.md](AGENTS.md)** automatically. It guides them through installation, testing, and deployment without leaking secrets. In Claude Code, `/setup` runs the same steps.
+
+For other agents, copy the prompt in **[docs/agent-prompt.md](docs/agent-prompt.md)**.
+
+---
+
+## 📁 Project layout
+
+| Path | Description |
 | --- | --- |
-| Speech to text | `whisper-large-v3-turbo` |
-| Rewrite | `openai/gpt-oss-20b` |
-| Gemini | `gemini-3.6-flash` |
+| `client/` | Responsive frontend: HTML5, CSS custom design tokens, ES Modules |
+| `server/` | Express REST API, Groq & Gemini providers, rule-based heuristics |
+| `desktop/` | Python companion for global hotkey (`F8`) cross-app typing |
+| `docs/images/` | High-resolution UI screenshots and hero banner |
+| `docs/setup.md` | Local setup walkthrough for Windows, macOS, and Linux |
+| `docs/deploy/` | Hosting manuals for Docker, VPS, Cloud providers, and Homelabs |
+| `scripts/` | Automated setup scripts (`setup.ps1`, `setup.sh`, `install-vps.sh`) |
+| `tests/` | Automated zero-key test suite (`npm test`) |
+| `AGENTS.md` | Standard instructions and behavioral guardrails for coding agents |
+| `data/` | Local persistence for history, snippets, dictionary, and settings |
 
-## What you can do
+---
 
-- Hold **Space** and speak. The pill shows Listening, then Cleaning up.
-- Pick a tone: casual, formal, executive, code, bullets, standup, social, prompt, support, or a translation.
-- Keep a dictionary of names and a list of voice snippets.
-- Switch **Light**, **Dark**, and **Contrast** in the top bar.
-- Turn meeting notes into a summary when a key is set.
-- Type the result into any desktop app with the [desktop companion](desktop/README.md). Press **F8**, speak, press **F8** again.
+## 🔒 Security
 
-## Give this to a coding agent
+- The default web server has no authentication. Keys typed into Settings are stored in `data/whisperflow_store.json`.
+- **Do not expose port 3050 to the public internet without a reverse proxy or auth layer.**
+- Use Caddy basic auth, Cloudflare Access, or Tailscale for remote access.
+- Details and hardening instructions are documented in **[SECURITY.md](SECURITY.md)**.
 
-Clone the repo, open it in Cursor, Claude Code, GitHub Copilot, Gemini CLI, Windsurf, or Codex, and say **"set this up"**. Those agents read **[AGENTS.md](AGENTS.md)** on their own. It tells them how to install, test, and host Murmur Flow without committing your keys. In Claude Code, `/setup` runs the same steps.
+---
 
-Other agents: paste the prompt in **[docs/agent-prompt.md](docs/agent-prompt.md)**.
+## 🤝 Contributing
 
-## Project layout
+Contributions are very welcome! Please review **[CONTRIBUTING.md](CONTRIBUTING.md)** before submitting pull requests. All pull requests must pass `npm test`.
 
-| Path | What it is |
-| --- | --- |
-| `client/` | The web app |
-| `server/` | API, speech, and rewrite |
-| `desktop/` | Types into the app you are using |
-| `docs/setup.md` | Install on your computer |
-| `docs/deploy/` | One hosting guide per platform |
-| `scripts/` | Setup scripts for Windows, Mac, Linux, and Ubuntu servers |
-| `AGENTS.md` | Instructions coding agents read on their own |
-| `.env.example` | Empty key file. Copy this. Never commit `.env` |
-| `data/` | Created on your machine. History and saved keys stay here |
+---
 
-## Security
+## 📄 License
 
-The app has no login. Keys typed into Settings are stored in plain text in `data/whisperflow_store.json`. Do not put the app on the public internet without a password in front of it. Every hosting guide has a "Put a password in front" section. Details are in [SECURITY.md](SECURITY.md).
-
-## Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md). `npm test` is the check that must pass.
-
-## License
-
-[MIT](LICENSE) © 2026 Imad Khan
+Distributed under the [MIT](LICENSE) License. © 2026 Imad Khan

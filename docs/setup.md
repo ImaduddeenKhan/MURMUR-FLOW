@@ -70,6 +70,8 @@ To use a different AI provider, see [providers.md](providers.md).
 
 The companion types cleaned text into any app on your computer, such as Word, Slack, or your email. Press **F8**, speak, press **F8** again.
 
+It is a separate program from the web app. The web app must be running, and a speech key must be saved in its Settings. The companion runs on the computer with the microphone, not on a server.
+
 1. Install Python 3 from https://www.python.org/downloads/. On Windows, check **Add python.exe to PATH**.
 2. With Murmur Flow running, open a second terminal in the `MURMUR-FLOW` folder and run:
 
