@@ -107,6 +107,53 @@ class WhisperFlowApp {
     this.setupHistory();
     this.loadInitialSettings();
     this.loadHistory();
+    this.handleUrlParams();
+  }
+
+  handleUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const theme = params.get('theme');
+    if (theme) {
+      const btn = document.querySelector(`[data-theme-choice="${theme}"]`);
+      if (btn) btn.click();
+    }
+    const tab = params.get('tab') || params.get('view');
+    if (tab) {
+      const viewMap = {
+        'dictate': 'viewDictation',
+        'viewdictation': 'viewDictation',
+        'notes': 'viewNotetaker',
+        'notetaker': 'viewNotetaker',
+        'viewnotetaker': 'viewNotetaker',
+        'command': 'viewCommand',
+        'viewcommand': 'viewCommand',
+        'dictionary': 'viewDictionary',
+        'viewdictionary': 'viewDictionary',
+        'snippets': 'viewSnippets',
+        'viewsnippets': 'viewSnippets'
+      };
+      const viewId = viewMap[tab.toLowerCase()] || tab;
+      const tabBtn = document.querySelector(`.nav-tab[data-view="${viewId}"]`);
+      if (tabBtn) tabBtn.click();
+    }
+    const sample = params.get('sample');
+    if (sample) {
+      const sampleBtn = document.querySelector(`[data-sample-clip="${sample}"]`);
+      if (sampleBtn) setTimeout(() => sampleBtn.click(), 100);
+    }
+    const summarize = params.get('summarize');
+    if (summarize === 'true') {
+      const sumBtn = document.getElementById('notetakerSummarizeBtn');
+      if (sumBtn) setTimeout(() => sumBtn.click(), 150);
+    }
+    const modal = params.get('modal');
+    if (modal === 'settings') {
+      if (this.settingsBtn) this.settingsBtn.click();
+    }
+    const pillState = params.get('pill');
+    if (pillState && this.pillWidget) {
+      this.pillWidget.setState(pillState);
+    }
   }
 
   // --- RECORDING PIPELINE ---
