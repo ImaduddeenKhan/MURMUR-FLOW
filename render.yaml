@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: whisperflow
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3050
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DEFAULT_STT_PROVIDER
+        value: groq
+      - key: DEFAULT_LLM_PROVIDER
+        value: groq

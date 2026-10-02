@@ -1,0 +1,30 @@
+# Secrets. Never commit a real env file.
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Local data. The app creates data/whisperflow_store.json on first run.
+# That file can contain API keys typed into Settings, plus personal history.
+data/*.json
+
+# Uploaded audio
+uploads/*
+!uploads/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs and OS junk
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp

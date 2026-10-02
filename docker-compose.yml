@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  whisperflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whisperflow
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3050}:3050"
+    environment:
+      - PORT=3050
+      - NODE_ENV=production
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEFAULT_STT_PROVIDER=${DEFAULT_STT_PROVIDER:-groq}
+      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-groq}
+    volumes:
+      - whisperflow_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3050/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  whisperflow_data:
+    driver: local

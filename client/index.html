@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Murmur Flow</title>
+  <meta name="description" content="Self-hosted voice dictation. Speak, then keep the cleaned line." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='6' y='1.5' width='4' height='8' rx='2' fill='none' stroke='%23161616' stroke-width='1.5'/%3E%3Cpath d='M4 7.5a4 4 0 0 0 8 0M8 11.5V14M5.5 14h5' fill='none' stroke='%23161616' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif&display=swap" />
+  <script>
+    (function () {
+      var key = 'whisperflow-theme';
+      var saved = null;
+      try { saved = localStorage.getItem(key); } catch (e) {}
+      var theme = saved;
+      if (theme !== 'light' && theme !== 'dark' && theme !== 'contrast') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        try { localStorage.setItem(key, theme); } catch (e) {}
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="styles/pill.css" />
+  <link rel="stylesheet" href="styles/notetaker.css" />
+</head>
+<body>
+
+  <a class="skip-link" href="#sandboxTextarea">Skip to transcript</a>
+
+  <header class="app-header">
+    <button type="button" class="wordmark" id="wordmarkBtn">Murmur Flow</button>
+
+    <nav class="nav-tabs" aria-label="Sections">
+      <button type="button" class="nav-tab active" data-view="viewDictation" aria-pressed="true">Dictate</button>
+      <button type="button" class="nav-tab" data-view="viewNotetaker" aria-pressed="false">Notes</button>
+      <button type="button" class="nav-tab" data-view="viewCommand" aria-pressed="false">Command</button>
+      <button type="button" class="nav-tab" data-view="viewDictionary" aria-pressed="false">Dictionary</button>
+      <button type="button" class="nav-tab" data-view="viewSnippets" aria-pressed="false">Snippets</button>
+    </nav>
+
+    <div class="header-actions">
+      <div class="theme-switch" role="radiogroup" aria-label="Theme">
+        <button type="button" role="radio" data-theme-choice="light" aria-checked="false">Light</button>
+        <button type="button" role="radio" data-theme-choice="dark" aria-checked="false">Dark</button>
+        <button type="button" role="radio" data-theme-choice="contrast" aria-checked="false">Contrast</button>
+      </div>
+      <button type="button" id="settingsBtn" class="btn-quiet" aria-haspopup="dialog">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M2 4.5h12M2 11.5h12" />
+          <circle cx="5.5" cy="4.5" r="1.75" />
+          <circle cx="10.5" cy="11.5" r="1.75" />
+        </svg>
+        Settings
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content" id="main">
+
+    <div id="viewDictation" class="view-panel active">
+      <div class="workspace">
+        <div class="workspace-main">
+          <div class="tone-row">
+            <span class="eyebrow" id="toneLabel">Tone</span>
+            <div class="tone-chips-bar" role="toolbar" aria-labelledby="toneLabel">
+              <button type="button" class="tone-chip active" data-tone="casual">Casual</button>
+              <button type="button" class="tone-chip" data-tone="formal">Formal</button>
+              <button type="button" class="tone-chip" data-tone="executive">Executive</button>
+              <button type="button" class="tone-chip" data-tone="code">Code</button>
+              <button type="button" class="tone-chip" data-tone="bullet">Bullets</button>
+              <button type="button" class="tone-chip" data-tone="standup">Standup</button>
+              <button type="button" class="tone-chip" data-tone="social">Social</button>
+              <button type="button" class="tone-chip" data-tone="prompt">Prompt</button>
+              <button type="button" class="tone-chip" data-tone="support">Support</button>
+              <button type="button" class="tone-chip" data-tone="translate_es">Spanish</button>
+              <button type="button" class="tone-chip" data-tone="translate_fr">French</button>
+              <button type="button" class="tone-chip" data-tone="translate_de">German</button>
+              <button type="button" class="tone-chip" data-tone="translate_hi">Hindi</button>
+              <button type="button" class="tone-chip" data-tone="translate_ja">Japanese</button>
+              <button type="button" class="tone-chip" data-tone="raw">Raw</button>
+            </div>
+          </div>
+
+          <section class="sheet" aria-label="Transcript">
+            <div class="sheet-bar">
+              <p class="eyebrow">Transcript</p>
+              <div class="editor-actions">
+                <button type="button" id="copyEditorBtn" class="btn-quiet" title="Copy text to clipboard">Copy</button>
+                <button type="button" id="exportMdBtn" class="btn-quiet" title="Download as Markdown">MD</button>
+                <button type="button" id="exportTxtBtn" class="btn-quiet" title="Download as text">TXT</button>
+                <button type="button" id="webhookBtn" class="btn-quiet" title="Send to the webhook in Settings">Send</button>
+                <button type="button" id="clearEditorBtn" class="btn-quiet" title="Clear text">Clear</button>
+              </div>
+            </div>
+
+            <div class="editor-container">
+              <textarea
+                id="sandboxTextarea"
+                class="editor-textarea"
+                placeholder="Hold Space and speak. The cleaned line lands here."
+              ></textarea>
+            </div>
+
+            <div class="result-split">
+              <div class="result-pane">
+                <p class="eyebrow">Heard</p>
+                <div id="diffRawText" class="result-body is-idle">—</div>
+              </div>
+              <div class="result-pane">
+                <p class="eyebrow">Result</p>
+                <div id="diffPolishedText" class="result-body is-idle">—</div>
+              </div>
+            </div>
+
+            <div class="sheet-foot">
+              <p class="hint">Hold Space outside a field. Esc cancels.</p>
+              <div class="metrics-row">
+                <div class="metric-pill">
+                  <div class="metric-pill-title">Latency</div>
+                  <div id="metricLatency" class="metric-pill-value">—</div>
+                </div>
+                <div class="metric-pill">
+                  <div class="metric-pill-title">Speed</div>
+                  <div id="metricSpeed" class="metric-pill-value">—</div>
+                </div>
+                <div class="metric-pill">
+                  <div class="metric-pill-title">Zero-edit</div>
+                  <div id="metricZeroEdit" class="metric-pill-value">—</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="samples">
+            <span class="eyebrow">Samples</span>
+            <button type="button" class="chip" data-sample-clip="meeting">Launch note</button>
+            <button type="button" class="chip" data-sample-clip="code">Bug report</button>
+            <button type="button" class="chip" data-sample-clip="email">Follow-up</button>
+          </div>
+        </div>
+
+        <aside class="history-rail" aria-label="History">
+          <div class="rail-head">
+            <p class="eyebrow">History</p>
+            <button type="button" id="historyClearBtn" class="btn-text" disabled>Clear</button>
+          </div>
+          <div id="historyList"></div>
+        </aside>
+      </div>
+    </div>
+
+    <div id="viewNotetaker" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Notetaker</p>
+          <p class="view-lead">A transcript with names, then notes you can copy.</p>
+        </div>
+        <div class="view-actions">
+          <button type="button" id="notetakerSampleBtn" class="btn-quiet">Reload sample</button>
+          <button type="button" id="notetakerSummarizeBtn" class="btn-primary">Generate notes</button>
+        </div>
+      </div>
+
+      <div class="notetaker-container">
+        <div class="meeting-live-box">
+          <div class="meeting-header-bar">
+            <div class="meeting-title-meta">
+              <div class="meeting-main-title">Sprint planning</div>
+              <div class="hint">Stephen, Nathalie, Mikel</div>
+            </div>
+            <div class="meeting-timer-badge">
+              <span class="record-dot" aria-hidden="true"></span>
+              <span>02:15</span>
+            </div>
+          </div>
+          <div id="notetakerStream" class="transcript-stream"></div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-header">
+            <p class="eyebrow">Notes</p>
+            <div class="editor-actions">
+              <button type="button" id="notetakerCopyMdBtn" class="btn-quiet">Copy Markdown</button>
+              <button type="button" id="notetakerClaudeBtn" class="btn-quiet">Claude prompt</button>
+              <button type="button" id="notetakerGptBtn" class="btn-quiet">ChatGPT prompt</button>
+            </div>
+          </div>
+          <div id="notetakerSummary" class="summary-content">
+            <p class="empty-state">Generate notes when you want a summary of this conversation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewCommand" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Command</p>
+          <p class="view-lead">Paste a passage, then say how it should change.</p>
+        </div>
+      </div>
+
+      <div class="command-layout">
+        <section class="pane">
+          <p class="eyebrow">Source</p>
+          <textarea id="cmdSourceText" class="editor-textarea">We were wondering if you would perhaps be interested in having a discussion regarding our recent software deployment sometime later this month if your busy schedule allows it.</textarea>
+          <div class="form-group command-instruction">
+            <label class="form-label" for="cmdInstructionInput">Instruction</label>
+            <div class="inline-field">
+              <input id="cmdInstructionInput" class="form-input" placeholder="Make this concise" value="Make this concise and direct" />
+              <button type="button" id="cmdRunBtn" class="btn-primary">Run</button>
+            </div>
+            <div class="preset-row">
+              <button type="button" class="chip" data-cmd-preset="Make this concise and direct">Concise</button>
+              <button type="button" class="chip" data-cmd-preset="Translate to professional Spanish">Spanish</button>
+              <button type="button" class="chip" data-cmd-preset="Format as an executive bullet list">Bullets</button>
+              <button type="button" class="chip" data-cmd-preset="Fix grammar and polish tone">Grammar</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pane">
+          <div class="card-header">
+            <p class="eyebrow">Result</p>
+            <button type="button" id="cmdCopyBtn" class="btn-quiet">Copy</button>
+          </div>
+          <div id="cmdResultContainer">
+            <div id="cmdResultText" class="result-body">Would you like to discuss our recent software deployment later this month?</div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="viewDictionary" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Dictionary</p>
+          <p class="view-lead">Names and terms that should be spelled the same way every time.</p>
+        </div>
+      </div>
+
+      <div class="split-tool">
+        <div class="tool-form">
+          <div class="form-group">
+            <label class="form-label" for="dictWordInput">Word</label>
+            <input id="dictWordInput" class="form-input" placeholder="Adithya, Supabase, LangChain" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="dictCategorySelect">Category</label>
+            <select id="dictCategorySelect" class="form-select">
+              <option value="name">Name</option>
+              <option value="code">Code</option>
+              <option value="jargon">Jargon</option>
+              <option value="product">Product</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="dictHintInput">Pronunciation</label>
+            <input id="dictHintInput" class="form-input" placeholder="Optional, such as soo-pa-base" />
+          </div>
+          <button type="button" id="dictAddBtn" class="btn-primary">Add word</button>
+        </div>
+        <div class="tool-list">
+          <p class="eyebrow">Saved</p>
+          <div id="dictionaryList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewSnippets" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Snippets</p>
+          <p class="view-lead">Say a short trigger and paste the longer text.</p>
+        </div>
+      </div>
+
+      <div class="split-tool">
+        <div class="tool-form">
+          <div class="form-group">
+            <label class="form-label" for="snipTriggerInput">Trigger</label>
+            <input id="snipTriggerInput" class="form-input" placeholder="insert calendly" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="snipContentInput">Expansion</label>
+            <textarea id="snipContentInput" class="editor-textarea" placeholder="The text to paste"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="snipDescInput">Note</label>
+            <input id="snipDescInput" class="form-input" placeholder="Optional" />
+          </div>
+          <button type="button" id="snipAddBtn" class="btn-primary">Save snippet</button>
+        </div>
+        <div class="tool-list">
+          <p class="eyebrow">Saved</p>
+          <div id="snippetsList"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="floatingPill" class="floating-pill-container">
+    <div id="flowPill" class="flow-pill">
+      <button type="button" id="pillMicBtn" class="pill-mic-btn" title="Hold Space or click to dictate" aria-label="Dictate">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="6" y="1.5" width="4" height="7.5" rx="2" />
+          <path d="M3.75 7.25a4.25 4.25 0 0 0 8.5 0" />
+          <path d="M8 11.5V14" />
+          <path d="M5.5 14h5" />
+        </svg>
+      </button>
+
+      <div class="pill-center">
+        <div id="pillSpinner" class="pill-spinner" aria-hidden="true"></div>
+        <canvas id="pillWaveform" class="pill-waveform-canvas" width="72" height="18" aria-hidden="true"></canvas>
+        <div id="pillStatusText" class="pill-status-text" aria-live="polite">Hold Space</div>
+      </div>
+
+      <div class="pill-controls">
+        <label class="visually-hidden" for="pillToneSelect">Tone</label>
+        <select id="pillToneSelect" class="pill-select" title="Tone">
+          <option value="casual">Casual</option>
+          <option value="formal">Formal</option>
+          <option value="executive">Executive</option>
+          <option value="code">Code</option>
+          <option value="bullet">Bullets</option>
+          <option value="standup">Standup</option>
+          <option value="social">Social</option>
+          <option value="prompt">Prompt</option>
+          <option value="support">Support</option>
+          <option value="translate_es">Spanish</option>
+          <option value="translate_fr">French</option>
+          <option value="translate_de">German</option>
+          <option value="translate_hi">Hindi</option>
+          <option value="translate_ja">Japanese</option>
+          <option value="raw">Raw</option>
+        </select>
+
+        <label class="visually-hidden" for="pillProviderSelect">Engine</label>
+        <select id="pillProviderSelect" class="pill-select" title="Speech and writing engine">
+          <option value="groq" selected>Groq</option>
+          <option value="gemini">Gemini</option>
+          <option value="webspeech">Web Speech</option>
+        </select>
+
+        <button type="button" id="pillHandsFreeBtn" class="pill-mode-toggle" aria-pressed="false" title="Keep listening until you click again">Hands-free</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="settingsTitle" class="modal-title">Settings</h2>
+        <button type="button" id="settingsCloseBtn" class="icon-btn" aria-label="Close settings">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">
+          <label for="settingGroqKey">Groq key</label>
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Get a key</a>
+        </div>
+        <input id="settingGroqKey" type="password" class="form-input" placeholder="gsk_…" autocomplete="off" />
+        <p class="hint">Used for transcription and the rewrite.</p>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">
+          <label for="settingGeminiKey">Gemini key</label>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get a key</a>
+        </div>
+        <input id="settingGeminiKey" type="password" class="form-input" placeholder="AIza…" autocomplete="off" />
+        <p class="hint">Used when Gemini is selected on the pill.</p>
+      </div>
+
+      <div class="check-grid">
+        <label class="check-row">
+          <input type="checkbox" id="settingSoundEffects" checked />
+          <span>
+            <span class="check-name">Sound</span>
+            <span class="hint">A short chime when dictation starts and ends.</span>
+          </span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="settingVadEnabled" checked />
+          <span>
+            <span class="check-name">Silence</span>
+            <span class="hint">Stop after a quiet pause of about two seconds.</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="settingWebhookUrl">Webhook</label>
+        <input id="settingWebhookUrl" class="form-input" placeholder="https://hooks.example.com/…" autocomplete="off" />
+        <p class="hint">Optional. Finished lines can be posted here.</p>
+      </div>
+
+      <p class="hint">Without a key, choose Web Speech on the pill, or run a sample.</p>
+
+      <div class="modal-actions">
+        <button type="button" id="saveSettingsBtn" class="btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      var theme = document.documentElement.getAttribute('data-theme') || 'light';
+      document.querySelectorAll('[data-theme-choice]').forEach(function (btn) {
+        var on = btn.getAttribute('data-theme-choice') === theme;
+        btn.classList.toggle('is-selected', on);
+        btn.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+    })();
+  </script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

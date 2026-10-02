@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in Murmur Flow did not work the way the docs say.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - On my computer
+        - Docker
+        - Hostinger
+        - AWS
+        - Azure
+        - Google Cloud
+        - Render, Railway, or Fly
+        - Desktop companion
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      placeholder: node -v
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error text
+      description: Paste the message. Remove API keys before you paste.
+      render: text
