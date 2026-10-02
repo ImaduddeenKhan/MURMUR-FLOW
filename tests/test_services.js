@@ -2,6 +2,7 @@ import assert from 'assert';
 import { storage } from '../server/services/storageService.js';
 import { zeroEditEngine } from '../server/services/zeroEditEngine.js';
 import { notetakerService } from '../server/services/notetakerService.js';
+import { resolveTone } from '../server/services/appToneService.js';
 
 async function runTests() {
   console.log('🧪 Starting WhisperFlow Service Tests...\n');
@@ -63,6 +64,28 @@ async function runTests() {
   assert.ok(summaryRes.summary, 'Summary should be generated');
   assert.ok(summaryRes.meeting, 'Meeting record should be saved');
   console.log('   ✓ Notetaker summary produced successfully.');
+
+  // Test 6: Automatic tone from the active app
+  console.log('6️⃣ Testing automatic tone from the active window...');
+  const auto = (processName, windowTitle) => resolveTone({ tone: 'auto', processName, windowTitle }, { fallbackTone: 'casual' });
+
+  assert.strictEqual(auto('slack.exe', 'general | Acme - Slack').tone, 'casual', 'Slack desktop should be casual');
+  assert.strictEqual(auto('Code.exe', 'index.js - murmur - Visual Studio Code').tone, 'code', 'VS Code should be code');
+  assert.strictEqual(auto('Cursor', 'app.js').tone, 'code', 'Cursor on macOS should be code');
+  assert.strictEqual(auto('chrome.exe', 'Inbox (3) - me@example.com - Gmail - Google Chrome').tone, 'formal', 'Gmail in Chrome should be formal');
+  assert.strictEqual(auto('msedge.exe', 'Acme - Slack - Microsoft Edge').tone, 'casual', 'Slack in a browser should be casual');
+  assert.strictEqual(auto('notepad.exe', 'Untitled - Notepad').source, 'default', 'Unknown apps should fall back');
+  assert.strictEqual(auto('', '').tone, 'casual', 'No window info should fall back to the default tone');
+
+  const manual = resolveTone({ tone: 'executive', processName: 'slack.exe' });
+  assert.strictEqual(manual.tone, 'executive', 'A tone the user picked must not be overridden');
+
+  const custom = resolveTone(
+    { tone: 'auto', processName: 'slack.exe' },
+    { rules: [{ label: 'Slack', tone: 'formal', process: ['slack'] }] }
+  );
+  assert.strictEqual(custom.tone, 'formal', 'Saved rules should replace the built-in ones');
+  console.log('   ✓ Slack, VS Code, Cursor, Gmail, and fallback tones resolved correctly.');
 
   console.log('\n🎉 ALL TESTS PASSED! WhisperFlow core services are functional.\n');
 }

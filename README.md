@@ -44,7 +44,7 @@ Murmur Flow is architected as two decoupled, high-performance interfaces tailore
 | **Runtime Stack** | Node.js 20+ LTS runtime (`Express`, zero build compilation step) | Python 3.10+ runtime (`sounddevice`, `scipy`, `keyboard`) |
 | **Privileges** | Standard unprivileged browser sandbox | Windows: standard user, but Administrator is needed for F8 to work inside apps running as administrator. macOS: `sudo`, plus Accessibility and Microphone permission for Terminal. Linux: root, X11 only |
 | **Network Topology** | Deployable locally (`localhost`) or remotely (VPS, Docker, Cloud) | Runs on the physical host machine with microphone hardware; connects to local or remote API |
-| **Feature Surface** | 15+ tone presets, real-time waveform, meeting diarization, dictionary, snippets, export to MD/TXT/Webhook | Records while F8 is toggled on, then pastes through the clipboard (your current clipboard contents are replaced). Tone set with `--tone`. Needs a speech API key saved in the web app |
+| **Feature Surface** | 15+ tone presets, real-time waveform, meeting diarization, dictionary, snippets, export to MD/TXT/Webhook | Records while F8 is toggled on, then pastes through the clipboard (your current clipboard contents are replaced). Picks the tone from the app in front (Slack casual, VS Code code, Gmail formal), or a fixed one with `--tone`. Needs a speech API key saved in the web app |
 
 > **Architectural Note**: The desktop companion is not standalone. It sends audio to the web app's server, which applies the API keys, tone, and dictionary saved in Settings. The server must be running.
 
@@ -256,7 +256,8 @@ sudo .venv/bin/python desktop/whisperflow_companion.py
 - The companion pastes through the clipboard. Whatever you had copied is replaced by the dictated text.
 - Run it on the computer with the microphone, never on the server. To use a hosted Murmur Flow, point at it: `python desktop/whisperflow_companion.py --server https://your-domain`. A server behind a password (Caddy basic auth) will refuse it; use a Tailscale address instead.
 - If the four packages are missing, the companion starts in a fallback mode that does not record your voice. Install them first.
-- Change the hotkey or tone: `--hotkey f9`, `--tone formal`.
+- The tone follows the app you are typing into: Slack and Discord get casual, VS Code, Cursor, and terminals get code, Gmail, Outlook, and Word get formal. The full list and how to change it are in [desktop/README.md](desktop/README.md#automatic-tone).
+- Change the hotkey or force one tone: `--hotkey f9`, `--tone formal`.
 
 All options and fixes are in **[desktop/README.md](desktop/README.md)**.
 

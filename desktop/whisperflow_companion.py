@@ -38,7 +38,7 @@ print("""
 parser = argparse.ArgumentParser(description="WhisperFlow Desktop Injection Companion")
 parser.add_argument("--server", default="http://localhost:3050", help="WhisperFlow Server URL")
 parser.add_argument("--hotkey", default="f8", help="Global Hotkey to toggle dictation (default: F8)")
-parser.add_argument("--tone", default="casual", help="Default tone: casual, formal, executive, code, bullet, standup, social")
+parser.add_argument("--tone", default="auto", help="auto (pick from the app you are typing into), or a fixed tone: casual, formal, executive, code, bullet, standup, social")
 parser.add_argument("--groq-key", default=os.environ.get("GROQ_API_KEY", ""), help="Groq API Key (optional)")
 parser.add_argument("--gemini-key", default=os.environ.get("GEMINI_API_KEY", ""), help="Gemini API Key (optional)")
 args = parser.parse_args()
@@ -65,6 +65,71 @@ try:
         print(f"✅ Connected to WhisperFlow Server: {SERVER_URL} (Status: {health_data.get('status', 'ok')})")
 except Exception as e:
     print(f"⚠️ Warning: Could not reach {SERVER_URL} ({e}). Ensure WhisperFlow server is running.")
+
+def get_active_window():
+    """
+    Returns (process_name, window_title) for the window in front, or ("", "")
+    if it cannot be read. Never raises.
+    """
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            from ctypes import wintypes
+
+            user32 = ctypes.windll.user32
+            kernel32 = ctypes.windll.kernel32
+            hwnd = user32.GetForegroundWindow()
+            if not hwnd:
+                return "", ""
+
+            length = user32.GetWindowTextLengthW(hwnd)
+            title_buf = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(hwnd, title_buf, length + 1)
+
+            pid = wintypes.DWORD()
+            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+            process_name = ""
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+            if handle:
+                try:
+                    size = wintypes.DWORD(1024)
+                    path_buf = ctypes.create_unicode_buffer(size.value)
+                    if kernel32.QueryFullProcessImageNameW(handle, 0, path_buf, ctypes.byref(size)):
+                        process_name = os.path.basename(path_buf.value)
+                finally:
+                    kernel32.CloseHandle(handle)
+            return process_name, title_buf.value
+
+        if sys.platform == "darwin":
+            script = (
+                'tell application "System Events"\n'
+                '  set frontApp to first application process whose frontmost is true\n'
+                '  set appName to name of frontApp\n'
+                '  set winTitle to ""\n'
+                '  try\n'
+                '    set winTitle to name of front window of frontApp\n'
+                '  end try\n'
+                'end tell\n'
+                'return appName & linefeed & winTitle'
+            )
+            out = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=2).stdout
+            parts = out.rstrip("\n").split("\n", 1)
+            return parts[0].strip(), (parts[1].strip() if len(parts) > 1 else "")
+
+        # Linux (X11 only)
+        win_id = subprocess.run(["xdotool", "getactivewindow"], capture_output=True, text=True, timeout=2).stdout.strip()
+        if not win_id:
+            return "", ""
+        title = subprocess.run(["xdotool", "getwindowname", win_id], capture_output=True, text=True, timeout=2).stdout.strip()
+        pid = subprocess.run(["xdotool", "getwindowpid", win_id], capture_output=True, text=True, timeout=2).stdout.strip()
+        process_name = ""
+        if pid:
+            with open(f"/proc/{pid}/comm", "r", encoding="utf-8") as f:
+                process_name = f.read().strip()
+        return process_name, title
+    except Exception:
+        return "", ""
 
 def paste_text_into_active_window(text):
     """
@@ -95,9 +160,11 @@ def paste_text_into_active_window(text):
         except Exception as e:
             print(f"Clipboard paste error: {e}")
 
-def process_audio_file(filepath):
+def process_audio_file(filepath, process_name="", window_title=""):
     """
     Sends WAV/WebM audio to WhisperFlow /api/dictate and retrieves zero-edit text.
+    process_name and window_title describe the app that was in front when
+    recording started. The server uses them only when the tone is "auto".
     """
     print("⚡ Sending audio to WhisperFlow Zero-Edit Engine...")
     start_time = time.time()
@@ -127,6 +194,14 @@ def process_audio_file(filepath):
     body.append(b'Content-Disposition: form-data; name="appName"')
     body.append(b"")
     body.append(b"Universal Desktop App")
+
+    # Active window, for automatic tone
+    for field, value in (("processName", process_name), ("windowTitle", window_title)):
+        if value:
+            body.append(f"--{boundary}".encode())
+            body.append(f'Content-Disposition: form-data; name="{field}"'.encode())
+            body.append(b"")
+            body.append(value.encode("utf-8"))
 
     # API keys if provided
     if args.groq_key:
@@ -160,6 +235,9 @@ def process_audio_file(filepath):
             res_data = json.loads(response.read().decode())
             clean_text = res_data.get("processedText", "")
             elapsed_ms = int((time.time() - start_time) * 1000)
+            if res_data.get("tone"):
+                how = "matched app" if res_data.get("toneSource") == "app-rule" else res_data.get("toneSource", "")
+                print(f"🎨 Tone: {res_data['tone']} ({res_data.get('appName', 'General')}, {how})")
             print(f"✨ Transcribed in {elapsed_ms}ms: \"{clean_text}\"")
             print("🚀 Injecting into active window...")
             paste_text_into_active_window(clean_text)
@@ -169,6 +247,7 @@ def process_audio_file(filepath):
 
 is_recording = False
 recording_frames = []
+recording_window = ("", "")
 SAMPLE_RATE = 16000
 
 def audio_callback(indata, frames, time_info, status):
@@ -176,12 +255,16 @@ def audio_callback(indata, frames, time_info, status):
         recording_frames.append(indata.copy())
 
 def start_recording():
-    global is_recording, recording_frames
+    global is_recording, recording_frames, recording_window
     if is_recording:
         return
+    # Read the window now, while the target app is still in front.
+    recording_window = get_active_window() if CURRENT_TONE == "auto" else ("", "")
     is_recording = True
     recording_frames = []
     print("\n🔴 [RECORDING...] Speak now! (Press hotkey again to finish & inject)")
+    if recording_window[0]:
+        print(f"   Typing into: {recording_window[0]}")
 
 def stop_recording():
     global is_recording
@@ -201,7 +284,7 @@ def stop_recording():
         tmp_path = tmp.name
 
     write_wav(tmp_path, SAMPLE_RATE, (audio_data * 32767).astype(np.int16))
-    threading.Thread(target=process_audio_file, args=(tmp_path,)).start()
+    threading.Thread(target=process_audio_file, args=(tmp_path, *recording_window)).start()
 
 def toggle_recording():
     if is_recording:
@@ -211,7 +294,10 @@ def toggle_recording():
 
 def main():
     print(f"🎯 Global Hotkey: [{HOTKEY.upper()}]")
-    print(f"🎨 Active Tone:   [{CURRENT_TONE.upper()}]")
+    if CURRENT_TONE == "auto":
+        print("🎨 Active Tone:   [AUTO] Slack is casual, VS Code is code, Gmail is formal")
+    else:
+        print(f"🎨 Active Tone:   [{CURRENT_TONE.upper()}]")
     print("\nHow to use:")
     print(f"  1. Click into any app (Slack, VS Code, Word, Notion, Browser)")
     print(f"  2. Press [{HOTKEY.upper()}] to start speaking")

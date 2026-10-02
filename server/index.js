@@ -12,6 +12,7 @@ import { geminiService } from './services/geminiService.js';
 import { zeroEditEngine } from './services/zeroEditEngine.js';
 import { notetakerService } from './services/notetakerService.js';
 import { storage } from './services/storageService.js';
+import { resolveTone } from './services/appToneService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,12 +55,26 @@ app.post('/api/dictate', upload.single('audio'), async (req, res) => {
     const {
       sttProvider = storage.getSettings().sttProvider || 'groq',
       llmProvider = storage.getSettings().llmProvider || 'groq',
-      tone = storage.getSettings().defaultTone || 'casual',
       language = 'auto',
-      appName = 'General',
+      processName,
+      windowTitle,
       apiKeyGroq,
       apiKeyGemini
     } = req.body;
+
+    // The window title can contain private text (email subjects, file names).
+    // It is only used to pick a tone. It is not stored or sent to a model.
+    const resolved = resolveTone(
+      {
+        tone: req.body.tone || storage.getSettings().defaultTone || 'casual',
+        processName,
+        windowTitle,
+        appName: req.body.appName || 'General'
+      },
+      { rules: storage.getSettings().appToneRules, fallbackTone: storage.getSettings().defaultTone }
+    );
+    const tone = resolved.tone;
+    const appName = resolved.appLabel;
 
     const options = {
       apiKey: sttProvider === 'gemini' ? (apiKeyGemini || storage.getSettings().apiKeyGemini) : (apiKeyGroq || storage.getSettings().apiKeyGroq),
@@ -122,6 +137,9 @@ app.post('/api/dictate', upload.single('audio'), async (req, res) => {
       processedText: zeroEditResult.processedText,
       isSnippet: zeroEditResult.isSnippet || false,
       snippetTrigger: zeroEditResult.snippetTrigger || null,
+      tone,
+      toneSource: resolved.source,
+      appName,
       latency: {
         asrMs: asrResult.latencyMs,
         llmMs: zeroEditResult.latencyMs,
@@ -157,9 +175,9 @@ app.post('/api/process-text', async (req, res) => {
   try {
     const {
       text,
-      tone = storage.getSettings().defaultTone || 'casual',
-      appName = 'General',
       llmProvider = storage.getSettings().llmProvider || 'groq',
+      processName,
+      windowTitle,
       apiKeyGroq,
       apiKeyGemini
     } = req.body;
@@ -167,6 +185,18 @@ app.post('/api/process-text', async (req, res) => {
     if (!text || !text.trim()) {
       return res.status(400).json({ error: 'Text is required.' });
     }
+
+    const resolved = resolveTone(
+      {
+        tone: req.body.tone || storage.getSettings().defaultTone || 'casual',
+        processName,
+        windowTitle,
+        appName: req.body.appName || 'General'
+      },
+      { rules: storage.getSettings().appToneRules, fallbackTone: storage.getSettings().defaultTone }
+    );
+    const tone = resolved.tone;
+    const appName = resolved.appLabel;
 
     const options = {
       tone,
@@ -199,6 +229,9 @@ app.post('/api/process-text', async (req, res) => {
       processedText: result.processedText,
       isSnippet: result.isSnippet || false,
       snippetTrigger: result.snippetTrigger || null,
+      tone,
+      toneSource: resolved.source,
+      appName,
       latencyMs: result.latencyMs,
       provider: result.provider,
       model: result.model

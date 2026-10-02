@@ -61,11 +61,39 @@ sudo .venv/bin/python desktop/whisperflow_companion.py
 | --- | --- | --- |
 | `--server` | `http://localhost:3050` | Murmur Flow server |
 | `--hotkey` | `f8` | Start and stop recording |
-| `--tone` | `casual` | casual, formal, executive, code, bullet, standup, social |
+| `--tone` | `auto` | `auto` picks the tone from the app you are typing into. Or force one: casual, formal, executive, code, bullet, standup, social |
 | `--groq-key` | empty | Key for this run only, instead of the one in Settings |
 | `--gemini-key` | empty | Key for this run only, instead of the one in Settings |
 
-Use a hosted Murmur Flow:
+## Automatic tone
+
+When you press F8, the companion looks at the app in front and picks a tone for it:
+
+| You are typing in | Tone |
+| --- | --- |
+| Slack, Discord, WhatsApp, Telegram, Signal, Teams | casual |
+| VS Code, Cursor, Windsurf, JetBrains IDEs, Visual Studio, Xcode, Sublime, Zed, a terminal, GitHub in a browser | code |
+| Gmail, Outlook, Proton Mail, Apple Mail, Thunderbird, Word, Google Docs | formal |
+| Anything else | your default tone from the web app's Settings |
+
+Browser apps such as Gmail are recognized from the tab title, so the tab must be the one in front. The terminal window shows which app it saw (`Typing into: slack.exe`) and which tone it used.
+
+The window title is only used to pick the tone. It is not saved in history and not sent to the AI model.
+
+To always use one tone, start with `--tone formal` (or any other tone).
+
+To change the rules, save your own list as `appToneRules` through the settings API. Your list replaces the built-in one. Each rule has a `label`, a `tone`, and either `process` (app names) or `titleIncludes` (words in the window title):
+
+```bash
+curl -X POST http://localhost:3050/api/settings -H "Content-Type: application/json" \
+  -d '{"appToneRules":[{"label":"Slack","tone":"formal","process":["slack"]},{"label":"Gmail","tone":"formal","titleIncludes":["gmail"]}]}'
+```
+
+The built-in list is in `server/services/appToneService.js`.
+
+On macOS, reading the front window needs the same Accessibility permission as pasting. On Linux, it needs `xdotool` and an X11 session.
+
+## Use a hosted Murmur Flow
 
 ```bash
 python desktop/whisperflow_companion.py --server https://your-domain
