@@ -20,7 +20,27 @@ npm start
 
 Open http://localhost:3050.
 
-Windows, Mac, and Linux click-by-click steps, plus Hostinger, AWS, Azure, and Google Cloud, are in **[docs/setup.md](docs/setup.md)**.
+Or run the setup script. It checks Node.js, installs, tests, and starts the app:
+
+```bash
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+
+# macOS and Linux
+bash scripts/setup.sh
+```
+
+Click-by-click steps for Windows, Mac, and Linux are in **[docs/setup.md](docs/setup.md)**.
+
+## Host it on a server
+
+**[docs/deploy/README.md](docs/deploy/README.md)** explains which kind of hosting to buy, what it costs, and which will not work. There is one guide per platform: any Linux VPS, Hostinger, AWS, Azure, Google Cloud, DigitalOcean, Oracle Cloud (free), Hetzner, Render, Railway, Fly.io, Docker, Coolify, and a home server.
+
+On a fresh Ubuntu server, one command installs the app with HTTPS and a password:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+```
 
 A shared hosting plan that only runs PHP cannot run this app.
 
@@ -53,9 +73,9 @@ These model names are already set. Leave them unless you know the exact replacem
 
 ## Give this to a coding agent
 
-If you use Cursor, Copilot, Claude, or another coding agent, paste the prompt in **[docs/agent-prompt.md](docs/agent-prompt.md)**. It tells the agent how to install Murmur Flow without committing your keys.
+Clone the repo, open it in Cursor, Claude Code, GitHub Copilot, Gemini CLI, Windsurf, or Codex, and say **"set this up"**. Those agents read **[AGENTS.md](AGENTS.md)** on their own. It tells them how to install, test, and host Murmur Flow without committing your keys. In Claude Code, `/setup` runs the same steps.
 
-People changing the code should also read **[AGENTS.md](AGENTS.md)**.
+Other agents: paste the prompt in **[docs/agent-prompt.md](docs/agent-prompt.md)**.
 
 ## Project layout
 
@@ -64,13 +84,16 @@ People changing the code should also read **[AGENTS.md](AGENTS.md)**.
 | `client/` | The web app |
 | `server/` | API, speech, and rewrite |
 | `desktop/` | Types into the app you are using |
-| `docs/setup.md` | Install and hosting |
+| `docs/setup.md` | Install on your computer |
+| `docs/deploy/` | One hosting guide per platform |
+| `scripts/` | Setup scripts for Windows, Mac, Linux, and Ubuntu servers |
+| `AGENTS.md` | Instructions coding agents read on their own |
 | `.env.example` | Empty key file. Copy this. Never commit `.env` |
 | `data/` | Created on your machine. History and saved keys stay here |
 
 ## Security
 
-The app has no login. Keys typed into Settings are stored in plain text in `data/whisperflow_store.json`. Do not put the app on the public internet without a password in front of it. Details are in [SECURITY.md](SECURITY.md) and [docs/setup.md](docs/setup.md).
+The app has no login. Keys typed into Settings are stored in plain text in `data/whisperflow_store.json`. Do not put the app on the public internet without a password in front of it. Every hosting guide has a "Put a password in front" section. Details are in [SECURITY.md](SECURITY.md).
 
 ## Contributing
 

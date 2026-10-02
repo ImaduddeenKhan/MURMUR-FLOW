@@ -24,6 +24,9 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Launch posts and other drafts that stay off GitHub
+marketing/
+
 # Editors
 .vscode/
 .idea/
