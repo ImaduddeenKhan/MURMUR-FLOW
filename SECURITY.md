@@ -13,6 +13,6 @@ Murmur Flow is a personal server, not a multi-user product.
 - There is no login.
 - Keys typed into Settings are stored in plain text in `data/whisperflow_store.json`.
 - `GET /api/settings` returns those keys to anyone who can open the app.
-- Put a password in front of the app before it is reachable from the internet. The Hostinger section of [docs/setup.md](docs/setup.md) shows Nginx basic auth. On Google Cloud, the setup guide uses `--no-allow-unauthenticated`.
+- Put a password in front of the app before it is reachable from the internet. Every guide in [docs/deploy/](docs/deploy/README.md) has a "Put a password in front" section. `scripts/install-vps.sh` sets up Caddy with HTTPS and basic auth on a VPS. Render and Railway have no password screen; their guides explain the risk.
 
 Prefer environment variables (`GROQ_API_KEY`, `GEMINI_API_KEY`) over typing keys into Settings on a machine you do not fully control. `.env` is listed in `.gitignore`. Do not remove that line.

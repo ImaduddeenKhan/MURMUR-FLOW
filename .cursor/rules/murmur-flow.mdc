@@ -1,0 +1,14 @@
+---
+description: Murmur Flow project rules. The full instructions are in AGENTS.md.
+alwaysApply: true
+---
+
+Follow @AGENTS.md. It is the single source of truth for this repository. Edit AGENTS.md, not this file.
+
+Key rules:
+
+- Never commit `.env`, API keys, or `data/*.json`. Never invent or print keys.
+- `import 'dotenv/config'` must stay the first import in `server/index.js`.
+- Do not change model IDs or add a login system unless asked.
+- Run `npm test` before finishing. Stop any server you started.
+- To install Murmur Flow for a user, use the `setup` skill (`.claude/skills/setup/SKILL.md`).

@@ -5,14 +5,14 @@ Thanks for wanting to improve Murmur Flow. Small, clear changes are easier to re
 ## Before you start
 
 1. Fork https://github.com/ImaduddeenKhan/MURMUR-FLOW and clone your fork.
-2. Install Node.js 20 LTS.
-3. Run `npm install`, then `npm test`.
+2. Install Node.js 22 or 24 LTS (20 still works).
+3. Run `npm install`, then `npm test`. Or run `scripts/setup.ps1` (Windows) or `scripts/setup.sh` (macOS, Linux) with `-NoStart` / `--no-start`.
 
 ## Change
 
 1. Create a branch from `main`.
 2. Keep the change to one thing: a bug, a doc fix, or one feature.
-3. If install or hosting steps change, update `docs/setup.md` and the README in the same branch.
+3. If install or hosting steps change, update `docs/setup.md`, the matching guide in `docs/deploy/`, and the README in the same branch.
 4. Run `npm test` before you open the pull request.
 
 Do not commit `.env` or `data/whisperflow_store.json`. Those can contain personal keys and history.
