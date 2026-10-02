@@ -14,7 +14,7 @@
 [![STT: Groq Whisper](https://img.shields.io/badge/STT-Whisper--Large--v3--Turbo-orange.svg)](https://groq.com)
 [![LLM: Gemini / Groq](https://img.shields.io/badge/LLM-Gemini%20%2F%20Groq-blueviolet.svg)](https://aistudio.google.com)
 
-[Two Ways to Use It](#-two-ways-to-use-murmur-flow) •
+[Architecture](#-architecture--interaction-modalities) •
 [Visual Tour](#-visual-tour--features) •
 [Quickstart](#-install-on-your-computer) •
 [Self-Hosting](#-host-it-on-a-server) •
@@ -31,23 +31,22 @@ The app runs on your computer or a private server you control. Speech-to-text an
 
 ---
 
-## 🧭 Two ways to use Murmur Flow
+## 🏗️ Architecture & Interaction Modalities
 
-Murmur Flow has two parts. They are separate programs. Start with the web app. Add the desktop companion when you want to dictate into other apps.
+Murmur Flow is architected as two decoupled, high-performance interfaces tailored for distinct productivity workflows:
 
-| | 🌐 Web app | 🖥️ Desktop companion (F8) |
-| --- | --- | --- |
-| **What it is** | The page at http://localhost:3050 | A small Python program that runs in a terminal window |
-| **Where you speak** | Inside the Murmur Flow browser tab | Inside any app: Slack, Cursor, VS Code, Word, Notion, Gmail, a terminal |
-| **How you start talking** | Hold **Space** while the tab is in front | Press **F8** in any app. Press **F8** again to stop |
-| **Where the text goes** | Shown in the page, and copied to your clipboard | Typed at your cursor in the app you were using |
-| **What you install** | Nothing extra. `npm start` is enough | Python 3 and four packages, on the computer that has the microphone |
-| **API key** | Not needed for typed cleanup, snippets, dictionary. Needed for the microphone | Always needed. Every F8 recording goes to the speech model |
-| **Administrator rights** | Never | On Windows, sometimes. On macOS and Linux, usually. See [below](#%EF%B8%8F-desktop-companion-f8-in-any-app) |
-| **On a server** | Yes. Host it anywhere | No. It runs on your own computer and talks to the web app's server |
-| **Also has** | Tones, meeting notes, command mode, dictionary, snippets, history, themes | Tone choice with `--tone`. Nothing else. Settings live in the web app |
+| Dimension | 🌐 Web Studio & Dashboard | 🖥️ Universal Desktop Daemon (Global Hotkey) |
+| :--- | :--- | :--- |
+| **System Role** | Full-featured interactive studio for dictation, live split-diff review, meeting synthesis, and configuration | Headless background daemon providing system-wide push-to-talk text injection into external apps |
+| **Execution Context** | Modern web browsers (Chrome, Edge, Safari, Firefox) via local or hosted HTTP/HTTPS | Native OS background process running on macOS, Windows, and Linux |
+| **Input Capture** | In-browser WebRTC audio pipeline (<kbd>Space</kbd> push-to-talk or Hands-Free mode) | Low-level OS global keyboard hook (<kbd>F8</kbd> push-to-talk) with 16kHz PCM capture |
+| **Output Destination** | Interactive sandbox editor, visual diff breakdown, and system clipboard | Injected directly into active focused window (Slack, Cursor, VS Code, Word, Terminal, etc.) |
+| **Runtime Stack** | Node.js 20+ LTS runtime (`Express`, zero build compilation step) | Python 3.10+ runtime (`sounddevice`, `scipy`, `keyboard`) |
+| **Privileges** | Standard unprivileged browser sandbox | Standard user permissions (Elevated/Admin required on Windows only when injecting into elevated processes) |
+| **Network Topology** | Deployable locally (`localhost`) or remotely (VPS, Docker, Cloud) | Runs on the physical host machine with microphone hardware; connects to local or remote API |
+| **Feature Surface** | 15+ tone presets, real-time waveform, meeting diarization, dictionary, snippets, export to MD/TXT/Webhook | Instant audio capture, headless streaming, atomic clipboard injection, and CLI tone flags |
 
-The companion does not replace the web app. It needs the web app's server running, and it uses the keys and dictionary you saved there.
+> **Architectural Note**: The desktop daemon integrates seamlessly with the backend instance. It reads user-configured API keys, dynamic tone mappings, and phonetic dictionary bias directly from the central storage engine.
 
 ---
 
