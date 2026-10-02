@@ -13,6 +13,7 @@ import { zeroEditEngine } from './services/zeroEditEngine.js';
 import { notetakerService } from './services/notetakerService.js';
 import { storage } from './services/storageService.js';
 import { resolveTone } from './services/appToneService.js';
+import { logger } from './services/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,9 +23,25 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// Multer storage for incoming audio recordings
+// Multer storage with explicit audio extension preservation for Groq/Gemini compatibility
+const storageConfig = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
+    let ext = path.extname(file.originalname || '').toLowerCase();
+    if (!ext || ext === '.') {
+      if (file.mimetype === 'audio/wav' || file.mimetype === 'audio/x-wav') ext = '.wav';
+      else if (file.mimetype === 'audio/mp4' || file.mimetype === 'audio/m4a') ext = '.m4a';
+      else if (file.mimetype === 'audio/ogg') ext = '.ogg';
+      else if (file.mimetype === 'audio/mp3' || file.mimetype === 'audio/mpeg') ext = '.mp3';
+      else ext = '.webm';
+    }
+    const unique = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`;
+    cb(null, unique);
+  }
+});
+
 const upload = multer({
-  dest: UPLOADS_DIR,
+  storage: storageConfig,
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
 });
 
@@ -34,6 +51,18 @@ const DEFAULT_PORT = parseInt(process.env.PORT, 10) || 3050;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Structured API request logger
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const elapsed = Date.now() - start;
+    if (req.path !== '/health') {
+      logger.api(req.method, req.path, res.statusCode, elapsed);
+    }
+  });
+  next();
+});
 
 // Serve static frontend files
 const CLIENT_DIR = path.join(__dirname, '..', 'client');
@@ -82,8 +111,12 @@ app.post('/api/dictate', upload.single('audio'), async (req, res) => {
       appName,
       tone,
       sttProvider,
-      llmProvider
+      llmProvider,
+      originalFilename: req.file.originalname,
+      mimetype: req.file.mimetype
     };
+
+    logger.info(`[Dictate] Incoming audio: ${req.file.originalname || path.basename(tempFilePath)} (${(req.file.size / 1024).toFixed(1)} KB) | Tone: ${tone} | Provider: ${sttProvider}`);
 
     // Step 1: ASR Transcription
     let asrResult;
@@ -95,7 +128,7 @@ app.post('/api/dictate', upload.single('audio'), async (req, res) => {
         asrResult = await groqService.transcribeAudio(tempFilePath, options);
       }
     } catch (asrErr) {
-      console.error('❌ ASR Error:', asrErr.message);
+      logger.error(`[ASR Error] ${asrErr.message}`);
       return res.status(500).json({
         error: `Transcription error (${sttProvider}): ${asrErr.message}`,
         suggestion: 'Please verify your API key in Settings or try another provider.'
@@ -154,7 +187,7 @@ app.post('/api/dictate', upload.single('audio'), async (req, res) => {
       historyId: historyEntry.id
     });
   } catch (err) {
-    console.error('❌ Dictation Pipeline Failed:', err);
+    logger.error(`Dictation Pipeline Failed: ${err.message}`);
     res.status(500).json({ error: err.message || 'Internal processing error' });
   } finally {
     // Clean up temporary audio file
@@ -237,7 +270,7 @@ app.post('/api/process-text', async (req, res) => {
       model: result.model
     });
   } catch (err) {
-    console.error('❌ Process Text Failed:', err);
+    logger.error(`Process Text Failed: ${err.message}`);
     res.status(500).json({ error: err.message });
   }
 });
@@ -286,7 +319,7 @@ Output ONLY the transformed text. Do not add explanations, conversational remark
       model: result.model
     });
   } catch (err) {
-    console.error('❌ Command Mode Failed:', err);
+    logger.error(`Command Mode Failed: ${err.message}`);
     res.status(500).json({ error: err.message });
   }
 });
@@ -324,7 +357,7 @@ app.post('/api/notetaker/summarize', async (req, res) => {
       ...result
     });
   } catch (err) {
-    console.error('❌ Notetaker Failed:', err);
+    logger.error(`Notetaker Failed: ${err.message}`);
     res.status(500).json({ error: err.message });
   }
 });

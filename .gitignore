@@ -19,6 +19,7 @@ __pycache__/
 *.pyc
 
 # Logs and OS junk
+logs/
 *.log
 npm-debug.log*
 .DS_Store
