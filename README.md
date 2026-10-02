@@ -37,16 +37,16 @@ Murmur Flow is architected as two decoupled, high-performance interfaces tailore
 
 | Dimension | 🌐 Web Studio & Dashboard | 🖥️ Universal Desktop Daemon (Global Hotkey) |
 | :--- | :--- | :--- |
-| **System Role** | Full-featured interactive studio for dictation, live split-diff review, meeting synthesis, and configuration | Headless background daemon providing system-wide push-to-talk text injection into external apps |
-| **Execution Context** | Modern web browsers (Chrome, Edge, Safari, Firefox) via local or hosted HTTP/HTTPS | Native OS background process running on macOS, Windows, and Linux |
+| **System Role** | Full-featured interactive studio for dictation, live split-diff review, meeting synthesis, and configuration | Python script providing system-wide push-to-talk text injection into external apps |
+| **Execution Context** | Modern web browsers (Chrome, Edge, Safari, Firefox) via local or hosted HTTP/HTTPS | Runs in a terminal window on macOS, Windows, and Linux. The window must stay open (it can be minimized) |
 | **Input Capture** | In-browser WebRTC audio pipeline (<kbd>Space</kbd> push-to-talk or Hands-Free mode) | Low-level OS global keyboard hook (<kbd>F8</kbd> push-to-talk) with 16kHz PCM capture |
 | **Output Destination** | Interactive sandbox editor, visual diff breakdown, and system clipboard | Injected directly into active focused window (Slack, Cursor, VS Code, Word, Terminal, etc.) |
 | **Runtime Stack** | Node.js 20+ LTS runtime (`Express`, zero build compilation step) | Python 3.10+ runtime (`sounddevice`, `scipy`, `keyboard`) |
-| **Privileges** | Standard unprivileged browser sandbox | Standard user permissions (Elevated/Admin required on Windows only when injecting into elevated processes) |
+| **Privileges** | Standard unprivileged browser sandbox | Windows: standard user, but Administrator is needed for F8 to work inside apps running as administrator. macOS: `sudo`, plus Accessibility and Microphone permission for Terminal. Linux: root, X11 only |
 | **Network Topology** | Deployable locally (`localhost`) or remotely (VPS, Docker, Cloud) | Runs on the physical host machine with microphone hardware; connects to local or remote API |
-| **Feature Surface** | 15+ tone presets, real-time waveform, meeting diarization, dictionary, snippets, export to MD/TXT/Webhook | Instant audio capture, headless streaming, atomic clipboard injection, and CLI tone flags |
+| **Feature Surface** | 15+ tone presets, real-time waveform, meeting diarization, dictionary, snippets, export to MD/TXT/Webhook | Records while F8 is toggled on, then pastes through the clipboard (your current clipboard contents are replaced). Tone set with `--tone`. Needs a speech API key saved in the web app |
 
-> **Architectural Note**: The desktop daemon integrates seamlessly with the backend instance. It reads user-configured API keys, dynamic tone mappings, and phonetic dictionary bias directly from the central storage engine.
+> **Architectural Note**: The desktop companion is not standalone. It sends audio to the web app's server, which applies the API keys, tone, and dictionary saved in Settings. The server must be running.
 
 ---
 
